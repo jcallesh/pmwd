@@ -49,6 +49,8 @@ class Cosmology:
         Hubble constant in unit of 100 [km/s/Mpc].
     f_nl_loc_ : float or jax.numpy.ndarray, optional
         amplitude of local primordial non-Gaussianity. Default is None.
+    f_nl_equi_ : float or jax.numpy.ndarray, optional
+        amplitude of equilateral primordial non-Gaussianity. Default is None.
     """
 
     conf: Configuration = field(repr=False)
@@ -67,6 +69,8 @@ class Cosmology:
     w_a_fixed: ClassVar[float] = 0
     f_nl_loc_: Optional[ArrayLike] = None
     f_nl_loc_fixed: ClassVar[float] = 0
+    f_nl_equi_: Optional[ArrayLike] = None
+    f_nl_equi_fixed: ClassVar[float] = 0
 
     transfer: Optional[Array] = field(default=None, compare=False)
 
@@ -156,6 +160,11 @@ class Cosmology:
         """Amplitude of local primordial non-Gaussianity."""
         return self.f_nl_loc_fixed if self.f_nl_loc_ is None else self.f_nl_loc_
 
+    @property
+    def f_nl_equi(self):
+        """Amplitude of equilteral primordial non-Gaussianity."""
+        return self.f_nl_equi_fixed if self.f_nl_equi_ is None else self.f_nl_equi_
+    
     @property
     def sigma8(self):
         """Linear matter rms overdensity within a tophat sphere of 8 Mpc/h radius at a=1."""

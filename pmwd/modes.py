@@ -63,7 +63,7 @@ def _safe_sqrt_bwd(y, y_cot):
 
 _safe_sqrt.defvjp(_safe_sqrt_fwd, _safe_sqrt_bwd)
 
-
+# JC: Utilities for padding and unpadding the modes to avoid cluttering the equilateral case
 def _safe_pad(field, conf):
     # TF: padding for antialiasing (factor of (3/2)**3. for the change in dimension)
     field = jnp.fft.fftshift(field,axes=[0,1])
@@ -144,14 +144,14 @@ def _linear_modes(modes, cosmo, conf, a=None, real=False):
         k_2_over_3 = jnp.power(kmag2, (4. - cosmo.n_s)/3.)
         k_1_over_3 = jnp.power(kmag2, (4. - cosmo.n_s)/6.)
 
-        # JC: lets start with K_{12}^{2nd} --> FFT( iFFT( k^{1/3}phi(k) )^2 )/ k^{2/3}
+        # JC: lets start with the symetric kernel K_{12}^{2nd} --> FFT( iFFT( k^{1/3}phi(k) )^2 )/ k^{2/3}
         modes_sym = _safe_pad(k_1_over_3*modes, conf)
         modes_sym = jnp.fft.rfftn(jnp.fft.irfftn(modes_sym)**2.) 
         modes_sym = _safe_unpad(modes_sym, conf)
         modes_sym = modes_sym/k_2_over_3
         modes_sym = modes_sym.at[0, 0, 0].set(0. + 0.j)
 
-        # JC: now with K_{12}^I -->  FFT(  iFFT(phi)*iFFT(k^{1/3}phi(k)) )/ k^{1/3}
+        # JC: now the third genertor scalar kernel K_{12}^I -->  FFT(  iFFT(phi)*iFFT(k^{1/3}phi(k)) )/ k^{1/3}
         modes_sca = _safe_pad(k_1_over_3*modes, conf)
         modes_phi = _safe_pad(modes, conf) #we will re-use for the next kernels
         modes_sca = jnp.fft.rfftn(jnp.fft.irfftn(modes_sca)*jnp.fft.irfftn(modes_phi)) 
@@ -159,7 +159,7 @@ def _linear_modes(modes, cosmo, conf, a=None, real=False):
         modes_sca = modes_sca/k_1_over_3
         modes_sca = modes_sca.at[0, 0, 0].set(0. + 0.j)
 
-        # JC: let start with K_{12}^{II} -->  FFT(  iFFT(phi)*iFFT(k^{2/3}phi(k)) )/ k^{2/3}
+        # JC: continue with the nabla kernel K_{12}^{II} -->  FFT(  iFFT(phi)*iFFT(k^{2/3}phi(k)) )/ k^{2/3}
         modes_nab = _safe_pad(k_2_over_3*modes, conf)
         modes_nab = jnp.fft.rfftn(jnp.fft.irfftn(modes_nab)*jnp.fft.irfftn(modes_phi)) 
         modes_nab = _safe_unpad(modes_nab, conf)
@@ -260,7 +260,7 @@ def _hermitian_symmetry(modes, conf):
     modes = modes.at[0, 0, 0].set(0.0 + 0.0j)
     return modes
 
-# JC: to implement fixed initial conditions:
+# JC: to set fixed initial conditions:
 #@partial(jit, static_argnames=('real', 'unit_abs'))
 def white_noise_fixed(seed, conf, real=False, unit_abs=False):
     """White noise Fourier or real modes, with random phases and fixed amplitude.
